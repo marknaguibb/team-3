@@ -74,9 +74,16 @@ def render(directory=None, *, record=None):
     if not completion["has_solution"]:
         st.error(completion["outcome"]["message"])
         table(pd.DataFrame(completion["outcome"]["stages"])); return
-    if completion["outcome"]["success"]: st.success("All seven optimization stages proven optimal.")
-    elif completion["monetary_optimal"]: st.warning("Service and minimum monetary cost proven. A secondary objective remains unproven; this is a checked feasible plan.")
-    else: st.warning("Feasible incumbent only. Service and/or monetary optimum remain unproven. Inspect the bounds and termination conditions below.")
+    if 'total_delivery_cost' in completion['costs']:
+        from app.components.financial_cards import render as financial_cards
+        financial_cards(completion['costs'],explicit_b=explicit)
+    if completion["outcome"]["success"]:
+        status="All seven optimization stages proven optimal."
+    elif completion["monetary_optimal"]:
+        status="Service and minimum monetary cost proven. A secondary objective remains unproven; this is a checked feasible plan."
+    else:
+        status="Feasible incumbent only. Service and/or monetary optimum remain unproven. Inspect the bounds and termination conditions below."
+    st.caption("Optimization status · "+status)
     if record is not None:
         st.caption(f"Read-only saved run · {record['created_at']} · {record['scenario_type']} · {record['model_version']} · {record['financial_version']}")
     else:
@@ -88,9 +95,6 @@ def render(directory=None, *, record=None):
               'cash','cumulative_indicators','b_material_consumption','fixed_receipts'}
     if not required<=set(t):
         st.info('Some newer report fields were not saved with this historical run. Available original tables are shown without recalculation.')
-        if 'total_delivery_cost' in completion['costs']:
-            from app.components.financial_cards import render as financial_cards
-            financial_cards(completion['costs'],explicit_b=explicit)
         for name,frame in t.items():
             with st.expander(name.replace('_',' ').title()): table(frame)
         return
@@ -106,10 +110,7 @@ def render(directory=None, *, record=None):
     if 'international_shipment_schedule' in t:
         with st.expander('International shipment schedule'):table(t['international_shipment_schedule'])
     complete='total_delivery_cost' in completion['costs']
-    if complete:
-        from app.components.financial_cards import render as financial_cards
-        financial_cards(completion['costs'],explicit_b=explicit)
-    else: st.info('Historical operating-cost-only model: additional A/C purchasing and B consumption were excluded. These are not comparable total delivery costs.')
+    if not complete: st.info('Historical operating-cost-only model: additional A/C purchasing and B consumption were excluded. These are not comparable total delivery costs.')
     cards=[("Minimum modeled annual cost" if completion["monetary_optimal"] else "Feasible plan cost",f"${k['cost']:,.2f}"),
         ("Annual customer service",f"{k['service']:.2%}" if k["service"] is not None else "No demand"),
         ("Demand fulfilled",f"{k['fulfilled']:,.1f} MSU"),("Unserved demand",f"{k['unserved']:,.1f} MSU"),

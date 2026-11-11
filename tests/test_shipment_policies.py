@@ -179,5 +179,7 @@ def test_dashboard_displays_actual_consolidated_solution(tmp_path,monkeypatch):
     assert next(x for x in at.metric if x.label=='International Shipments').value==str(status['international_shipments'])
     assert next(x for x in at.metric if x.label=='Material Order Lines').value==str(status['material_order_lines'])
     assert any('Consolidate All Products' in x.value for x in at.caption)
+    assert any('Optimization status' in x.value for x in at.caption)
+    assert not any('secondary objective remains unproven' in x.value for x in at.warning)
     cards=next(x.value for x in at.markdown if 'data-finance-key=' in x.value)
     assert cards.count('data-finance-key=')==5 and f"${status['costs']['total_delivery_cost']:,.2f}" in cards

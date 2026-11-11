@@ -50,7 +50,8 @@ def test_actual_v7_financial_dashboard_and_persisted_snapshot():
     cards=next(x.value for x in at.markdown if 'data-finance-key=' in x.value)
     assert 'Additional Product B Material Cost' in cards and 'Excluding Material Purchases' in cards
     assert '$9,865,467.50' in cards
-    assert any('secondary objective remains unproven' in x.value for x in at.warning)
+    assert not any('secondary objective remains unproven' in x.value for x in at.warning)
+    assert any('secondary objective remains unproven' in x.value for x in at.caption)
 
 
 def test_new_and_old_saved_financial_definitions_never_silently_mix(tmp_path):
